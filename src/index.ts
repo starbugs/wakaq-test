@@ -2,6 +2,8 @@ import { Duration } from 'ts-duration';
 import { CronTask, WakaQ, WakaQueue, WakaQWorker } from 'wakaq';
 //import { z } from 'zod';
 //import { prisma } from './db';
+import { promises as fs } from 'fs';
+import lockfile from 'proper-lockfile';
 
 export const wakaq = new WakaQ({
 
@@ -19,7 +21,7 @@ export const wakaq = new WakaQ({
      int. The variable "cores" is replaced with the number of processors on
      the current machine.
   */
-  concurrency: 1,
+  concurrency: 2,
 
   /* List your queues and their priorities.
   */
@@ -39,21 +41,91 @@ export const wakaq = new WakaQ({
   */
   maxRetries: 3,
 
-  singleProcess: true,
+  singleProcess: false,
 
   /* Schedule two tasks, the first runs every minute, the second once every ten minutes.
      To run scheduled tasks you must keep `npm run scheduler` running as a daemon.
   */
   schedules: [
-
-    // Runs myTask once every 5 minutes.
-    new CronTask('*/5 * * * *', 'myTask'),
+    // Runs simpleTask once every 5 minutes.
+    new CronTask('*/5 * * * *', 'simpleTask'),
   ],
 });
 
-export const myTask = wakaq.task(
+export const simpleTask = wakaq.task(
   async () => {
-    console.log("Task did run successfully")
+    //for (let i=0; i<20000; i++) {}
+    const taskId = await incrementNumberInFile('number.txt')
+    console.log(`Task id ${taskId}: did run successfully`)
   },
-  { name: 'myTask' },
+  { name: 'simpleTask' },
 );
+
+export const sleeperTask = wakaq.task(
+  async () => {
+    //for (let i=0; i<20000; i++) {}
+    const taskId = await incrementNumberInFile('number.txt')
+    //await wait(0.2)
+    console.log(`Task id ${taskId}: did run sleeper successfully`)
+  },
+  { name: 'sleeperTask' },
+);
+
+export const failingTask = wakaq.task(
+  async () => {
+    const taskId = await incrementNumberInFile('number.txt')
+    console.log(`Task id ${taskId}: will now intentionally fail`)
+    throw new Error("Fail");
+  },
+  { name: 'failingTask' },
+);
+
+async function incrementNumberInFile(filePath: string): Promise<number | undefined> {
+  var releaseLock: (() => Promise<void>) | undefined
+  try {
+    // Acquire a lock on the file
+    releaseLock = await lockfile.lock(filePath, {
+      retries: {
+        retries: 5,     // Number of retries
+        maxTimeout: 1000 // Maximum time to wait between retries (in milliseconds)
+      }
+    });
+
+    // Read the current number from the file
+    const data = await fs.readFile(filePath, 'utf8');
+    let number = parseInt(data);
+
+    // Increment the number
+    number = isNaN(number) ? 0 : number + 1;
+
+    // Write the incremented number back to the file
+    await fs.writeFile(filePath, number.toString(), 'utf8');
+    //console.log(`Updated number: ${number}`);
+
+    return number
+  } catch (error) {
+    // Handle specific file-related errors
+    if (error instanceof Error && 'code' in error) {
+      //console.error('An error occurred:', error.message);
+      if (error.code === 'ENOENT') {
+        await fs.writeFile(filePath, '0', 'utf8');
+        //console.log('File initialized with 0.');
+      }
+    } else {
+      console.error('An unexpected error occurred');
+    }
+  } finally {
+    // Release the lock
+    if (releaseLock) {
+        await releaseLock();
+    }
+  }
+
+  return undefined
+}
+
+function wait(seconds: number): Promise<void> {
+  return new Promise(resolve => {
+      setTimeout(resolve, seconds * 1000);
+  });
+}

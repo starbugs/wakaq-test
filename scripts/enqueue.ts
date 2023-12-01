@@ -1,3 +1,3 @@
-import { myTask } from "../src/index"
+import { simpleTask } from "../src/index"
 
-myTask.enqueue()
+simpleTask.enqueue()

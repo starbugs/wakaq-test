@@ -1,5 +1,5 @@
 import { WakaQChildWorker } from 'wakaq';
-import { wakaq, myTask } from '../src/index.ts';
+import { wakaq, simpleTask } from '../src/index.ts';
 
 // import your tasks so they're registered
 // also make sure to enable tsc option verbatimModuleSyntax

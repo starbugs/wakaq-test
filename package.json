@@ -12,16 +12,20 @@
     "scheduler": "tsx scripts/wakaqScheduler.ts",
     "info": "tsx scripts/wakaqInfo.ts",
     "purge": "tsx scripts/wakaqPurge.ts",
-    "enqueue": "tsx scripts/enqueue.ts"
+    "enqueue": "tsx scripts/enqueue.ts",
+    "stress": "tsx scripts/stress.ts"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "proper-lockfile": "^4.1.2",
+    "ts-duration": "^1.1.0",
     "tsx": "^4.6.1",
     "wakaq": "^2.1.1"
   },
   "devDependencies": {
     "@types/node": "^20.10.1",
+    "@types/proper-lockfile": "^4.1.4",
     "typescript": "^5.3.2"
   }
 }
