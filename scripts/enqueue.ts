@@ -1,3 +1,5 @@
-import { simpleTask } from "../src/index"
+import { enqueueTask } from "../src/index"
 
-simpleTask.enqueue()
+enqueueTask.enqueue()
+
+console.log('Enqueued 1 task')

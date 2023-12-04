@@ -22,7 +22,7 @@ export const wakaq = new WakaQ({
      int. The variable "cores" is replaced with the number of processors on
      the current machine.
   */
-  concurrency: 'cores*2',
+  concurrency: 'cores*4',
 
   /* List your queues and their priorities.
   */
@@ -54,15 +54,28 @@ export const wakaq = new WakaQ({
 });
 
 let id = 0
-console.log(`---- ID: ${id}`)
+
+export const enqueueTask = wakaq.task(
+  async () => {
+    const uuid = uuidv4()
+    console.log(`New enqueue task id: ${++id}, uuid: ${uuid}`)
+    //const serial = await incrementNumberInFile('number.txt')
+    //const serial = undefined
+    for (let i=0; i<100000; i++) {
+      simpleTask.enqueue()
+    }
+    console.log(`Task id ${id}, uuid ${uuid}: finished running`)
+  },
+  { name: 'enqueueTask' },
+);
 
 export const simpleTask = wakaq.task(
   async () => {
-    //for (let i=0; i<20000; i++) {}
     const uuid = uuidv4()
     console.log(`New task id: ${++id}, uuid: ${uuid}`)
-    const serial = await incrementNumberInFile('number.txt')
-    console.log(`Task id ${id}, uuid ${uuid}, serial ${serial}: finished running`)
+    //const serial = await incrementNumberInFile('number.txt')
+    //const serial = undefined
+    console.log(`Task id ${id}, uuid ${uuid}: finished running`)
   },
   { name: 'simpleTask' },
 );
@@ -72,9 +85,10 @@ export const sleeperTask = wakaq.task(
     //for (let i=0; i<20000; i++) {}
     const uuid = uuidv4()
     console.log(`New task id: ${++id}, uuid: ${uuid}`)
-    const serial = await incrementNumberInFile('number.txt')
+    //const serial = await incrementNumberInFile('number.txt')
+    //const serial = undefined
     //await wait(0.2)
-    console.log(`Task id ${id}, uuid ${uuid}, serial ${serial}: finished running`)
+    console.log(`Task id ${id}, uuid ${uuid}: finished running`)
   },
   { name: 'sleeperTask' },
 );
@@ -83,8 +97,9 @@ export const failingTask = wakaq.task(
   async () => {
     const uuid = uuidv4()
     console.log(`New task id: ${++id}, uuid: ${uuid}`)
-    const serial = await incrementNumberInFile('number.txt')
-    console.log(`Task id ${id}, uuid ${uuid}, serial ${serial}: finished running`)
+    //const serial = await incrementNumberInFile('number.txt')
+    const serial = undefined
+    console.log(`Task id ${id}, uuid ${uuid}: finished running`)
     //console.log(`Task id ${taskId}: will now intentionally fail`)
     //throw new Error("Fail");
   },
