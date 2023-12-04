@@ -4,6 +4,7 @@ import { CronTask, WakaQ, WakaQueue, WakaQWorker } from 'wakaq';
 //import { prisma } from './db';
 import { promises as fs } from 'fs';
 import lockfile from 'proper-lockfile';
+import { v4 as uuidv4 } from 'uuid'
 
 export const wakaq = new WakaQ({
 
@@ -21,7 +22,7 @@ export const wakaq = new WakaQ({
      int. The variable "cores" is replaced with the number of processors on
      the current machine.
   */
-  concurrency: 2,
+  concurrency: 'cores*2',
 
   /* List your queues and their priorities.
   */
@@ -52,11 +53,16 @@ export const wakaq = new WakaQ({
   ],
 });
 
+let id = 0
+console.log(`---- ID: ${id}`)
+
 export const simpleTask = wakaq.task(
   async () => {
     //for (let i=0; i<20000; i++) {}
-    const taskId = await incrementNumberInFile('number.txt')
-    console.log(`Task id ${taskId}: did run successfully`)
+    const uuid = uuidv4()
+    console.log(`New task id: ${++id}, uuid: ${uuid}`)
+    const serial = await incrementNumberInFile('number.txt')
+    console.log(`Task id ${id}, uuid ${uuid}, serial ${serial}: finished running`)
   },
   { name: 'simpleTask' },
 );
@@ -64,36 +70,42 @@ export const simpleTask = wakaq.task(
 export const sleeperTask = wakaq.task(
   async () => {
     //for (let i=0; i<20000; i++) {}
-    const taskId = await incrementNumberInFile('number.txt')
+    const uuid = uuidv4()
+    console.log(`New task id: ${++id}, uuid: ${uuid}`)
+    const serial = await incrementNumberInFile('number.txt')
     //await wait(0.2)
-    console.log(`Task id ${taskId}: did run sleeper successfully`)
+    console.log(`Task id ${id}, uuid ${uuid}, serial ${serial}: finished running`)
   },
   { name: 'sleeperTask' },
 );
 
 export const failingTask = wakaq.task(
   async () => {
-    const taskId = await incrementNumberInFile('number.txt')
-    console.log(`Task id ${taskId}: will now intentionally fail`)
-    throw new Error("Fail");
+    const uuid = uuidv4()
+    console.log(`New task id: ${++id}, uuid: ${uuid}`)
+    const serial = await incrementNumberInFile('number.txt')
+    console.log(`Task id ${id}, uuid ${uuid}, serial ${serial}: finished running`)
+    //console.log(`Task id ${taskId}: will now intentionally fail`)
+    //throw new Error("Fail");
   },
   { name: 'failingTask' },
 );
 
 async function incrementNumberInFile(filePath: string): Promise<number | undefined> {
   var releaseLock: (() => Promise<void>) | undefined
+  var number: number | undefined
   try {
     // Acquire a lock on the file
     releaseLock = await lockfile.lock(filePath, {
       retries: {
-        retries: 5,     // Number of retries
+        retries: 5,      // Number of retries
         maxTimeout: 1000 // Maximum time to wait between retries (in milliseconds)
       }
     });
 
     // Read the current number from the file
     const data = await fs.readFile(filePath, 'utf8');
-    let number = parseInt(data);
+    number = parseInt(data);
 
     // Increment the number
     number = isNaN(number) ? 0 : number + 1;
@@ -101,18 +113,16 @@ async function incrementNumberInFile(filePath: string): Promise<number | undefin
     // Write the incremented number back to the file
     await fs.writeFile(filePath, number.toString(), 'utf8');
     //console.log(`Updated number: ${number}`);
-
-    return number
   } catch (error) {
     // Handle specific file-related errors
     if (error instanceof Error && 'code' in error) {
-      //console.error('An error occurred:', error.message);
+      console.error('An error occurred:', error.message);
       if (error.code === 'ENOENT') {
         await fs.writeFile(filePath, '0', 'utf8');
         //console.log('File initialized with 0.');
       }
     } else {
-      console.error('An unexpected error occurred');
+      console.error('An unexpected error occurred', error);
     }
   } finally {
     // Release the lock
@@ -121,7 +131,7 @@ async function incrementNumberInFile(filePath: string): Promise<number | undefin
     }
   }
 
-  return undefined
+  return number
 }
 
 function wait(seconds: number): Promise<void> {

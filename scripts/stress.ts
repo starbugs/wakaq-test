@@ -1,6 +1,6 @@
 import { simpleTask, sleeperTask, failingTask } from "../src/index"
 
-for (let i=0; i<10000; i++) {
+for (let i=0; i<1000; i++) {
   const rng = Math.random()
   if (rng > 0.333) {
     failingTask.enqueue()
