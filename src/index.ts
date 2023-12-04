@@ -59,8 +59,6 @@ export const enqueueTask = wakaq.task(
   async () => {
     const uuid = uuidv4()
     console.log(`New enqueue task id: ${++id}, uuid: ${uuid}`)
-    //const serial = await incrementNumberInFile('number.txt')
-    //const serial = undefined
     for (let i=0; i<100000; i++) {
       simpleTask.enqueue()
     }
@@ -73,8 +71,6 @@ export const simpleTask = wakaq.task(
   async () => {
     const uuid = uuidv4()
     console.log(`New task id: ${++id}, uuid: ${uuid}`)
-    //const serial = await incrementNumberInFile('number.txt')
-    //const serial = undefined
     console.log(`Task id ${id}, uuid ${uuid}: finished running`)
   },
   { name: 'simpleTask' },
@@ -85,9 +81,6 @@ export const sleeperTask = wakaq.task(
     //for (let i=0; i<20000; i++) {}
     const uuid = uuidv4()
     console.log(`New task id: ${++id}, uuid: ${uuid}`)
-    //const serial = await incrementNumberInFile('number.txt')
-    //const serial = undefined
-    //await wait(0.2)
     console.log(`Task id ${id}, uuid ${uuid}: finished running`)
   },
   { name: 'sleeperTask' },
@@ -97,57 +90,12 @@ export const failingTask = wakaq.task(
   async () => {
     const uuid = uuidv4()
     console.log(`New task id: ${++id}, uuid: ${uuid}`)
-    //const serial = await incrementNumberInFile('number.txt')
-    const serial = undefined
     console.log(`Task id ${id}, uuid ${uuid}: finished running`)
     //console.log(`Task id ${taskId}: will now intentionally fail`)
     //throw new Error("Fail");
   },
   { name: 'failingTask' },
 );
-
-async function incrementNumberInFile(filePath: string): Promise<number | undefined> {
-  var releaseLock: (() => Promise<void>) | undefined
-  var number: number | undefined
-  try {
-    // Acquire a lock on the file
-    releaseLock = await lockfile.lock(filePath, {
-      retries: {
-        retries: 5,      // Number of retries
-        maxTimeout: 1000 // Maximum time to wait between retries (in milliseconds)
-      }
-    });
-
-    // Read the current number from the file
-    const data = await fs.readFile(filePath, 'utf8');
-    number = parseInt(data);
-
-    // Increment the number
-    number = isNaN(number) ? 0 : number + 1;
-
-    // Write the incremented number back to the file
-    await fs.writeFile(filePath, number.toString(), 'utf8');
-    //console.log(`Updated number: ${number}`);
-  } catch (error) {
-    // Handle specific file-related errors
-    if (error instanceof Error && 'code' in error) {
-      console.error('An error occurred:', error.message);
-      if (error.code === 'ENOENT') {
-        await fs.writeFile(filePath, '0', 'utf8');
-        //console.log('File initialized with 0.');
-      }
-    } else {
-      console.error('An unexpected error occurred', error);
-    }
-  } finally {
-    // Release the lock
-    if (releaseLock) {
-        await releaseLock();
-    }
-  }
-
-  return number
-}
 
 function wait(seconds: number): Promise<void> {
   return new Promise(resolve => {
